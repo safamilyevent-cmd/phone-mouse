@@ -214,15 +214,17 @@ public sealed class MainForm : Form
         Ui(() =>
         {
             Log(line);
-            if (line.StartsWith("КОД СОПРЯЖЕНИЯ:", StringComparison.Ordinal))
+            if (line.StartsWith("PAIRING_CODE=", StringComparison.Ordinal) || line.StartsWith("КОД СОПРЯЖЕНИЯ:", StringComparison.Ordinal))
             {
-                pairingCode = line["КОД СОПРЯЖЕНИЯ:".Length..].Trim();
+                var prefix = line.StartsWith("PAIRING_CODE=", StringComparison.Ordinal) ? "PAIRING_CODE=" : "КОД СОПРЯЖЕНИЯ:";
+                pairingCode = line[prefix.Length..].Trim();
                 codeLabel.Text = "Код сопряжения: " + pairingCode;
                 UpdateQr();
             }
-            else if (line.StartsWith("Адрес для iPhone:", StringComparison.Ordinal))
+            else if (line.StartsWith("PHONE_URL=", StringComparison.Ordinal) || line.StartsWith("Адрес для iPhone:", StringComparison.Ordinal))
             {
-                var url = line["Адрес для iPhone:".Length..].Trim();
+                var prefix = line.StartsWith("PHONE_URL=", StringComparison.Ordinal) ? "PHONE_URL=" : "Адрес для iPhone:";
+                var url = line[prefix.Length..].Trim();
                 if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
                 {
                     var ip = uri.Host;
