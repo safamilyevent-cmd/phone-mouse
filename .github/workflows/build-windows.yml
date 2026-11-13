@@ -22,16 +22,23 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Restore source archive
+      - name: Restore source archive when source folder is absent
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $parts = Get-ChildItem -Path '.source-parts' -Filter '*.b64' | Sort-Object Name
-          if (-not $parts) { throw 'Source archive parts are missing.' }
-          $encoded = ($parts | ForEach-Object { (Get-Content $_.FullName -Raw).Trim() }) -join ''
-          [IO.File]::WriteAllBytes('source.zip', [Convert]::FromBase64String($encoded))
-          Expand-Archive -Path 'source.zip' -DestinationPath '.' -Force
-          if (-not (Test-Path 'PhoneMouse/PhoneMouse.sln')) { throw 'PhoneMouse solution was not extracted.' }
+          if (Test-Path 'PhoneMouse/PhoneMouse.sln') {
+            Write-Host 'Using checked-in PhoneMouse source.'
+          } else {
+            if (-not (Test-Path '.source-parts')) {
+              throw 'PhoneMouse source is missing. Upload the PhoneMouse/ directory to the repository root.'
+            }
+            $parts = Get-ChildItem -Path '.source-parts' -Filter '*.b64' | Sort-Object Name
+            if (-not $parts) { throw 'No .b64 source archive parts found in .source-parts.' }
+            $encoded = ($parts | ForEach-Object { (Get-Content $_.FullName -Raw).Trim() }) -join ''
+            [IO.File]::WriteAllBytes('source.zip', [Convert]::FromBase64String($encoded))
+            Expand-Archive -Path 'source.zip' -DestinationPath '.' -Force
+            if (-not (Test-Path 'PhoneMouse/PhoneMouse.sln')) { throw 'PhoneMouse solution was not extracted.' }
+          }
 
       - name: Install .NET SDK
         uses: actions/setup-dotnet@v4
