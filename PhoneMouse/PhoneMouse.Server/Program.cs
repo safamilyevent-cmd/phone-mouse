@@ -121,6 +121,8 @@ app.Map("/ws", async (HttpContext context) =>
     }
 });
 
+app.Lifetime.ApplicationStarted.Register(() => Console.WriteLine("SERVER_READY"));
+
 Console.WriteLine();
 Console.WriteLine("====================================");
 Console.WriteLine("        PHONE MOUSE SERVER");
