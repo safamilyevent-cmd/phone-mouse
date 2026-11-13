@@ -1,0 +1,9 @@
+{
+  "name": "Phone Mouse",
+  "short_name": "Phone Mouse",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101116",
+  "theme_color": "#101116",
+  "description": "Управление Windows с iPhone"
+}
