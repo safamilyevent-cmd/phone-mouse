@@ -1,17 +1,25 @@
 # Phone Mouse
 
-Wireless iPhone mouse and keyboard for Windows 10 over the local Wi-Fi network.
+Wireless iPhone mouse and keyboard for Windows 10/11 over the local Wi-Fi network.
 
-## Repository status
+## Windows desktop app
 
-The GitHub Actions workflow is committed at `.github/workflows/build-windows.yml`. It targets Windows x64, publishes a self-contained .NET 8 application, and prepares Windows and source ZIP artifacts. A version tag such as `v1.0.0` triggers a GitHub Release.
+The Windows package now includes a graphical launcher:
+- Start and stop the local server.
+- Display the pairing code and detected private IPv4 addresses.
+- Generate a QR code that opens the iPhone Safari interface with the pairing code prefilled.
+- Copy/open the connection URL.
+- Show whether an iPhone WebSocket client is connected.
+- View server output and errors.
 
-**The application source has not yet been uploaded to this repository.** The build workflow now detects a checked-in `PhoneMouse/PhoneMouse.sln` and builds it directly. Until that directory is added, CI will stop with a clear source-missing error.
-
-## Add the source
-
-Upload the `PhoneMouse/` directory from the prepared project archive to the repository root. It must contain `PhoneMouse.sln`, `README_RU.md`, and `PhoneMouse.Server/`.
+The desktop app is `PhoneMouse.exe`; the server is bundled under `Server/PhoneMouse.Server.exe`. Extract the complete ZIP and launch `PhoneMouse.exe` or `Run-PhoneMouse.bat`.
 
 ## Build and release
 
-Push to `main` to run CI. Push a version tag such as `v1.0.0` to create a GitHub Release with the Windows x64 ZIP and source ZIP.
+GitHub Actions builds a self-contained Windows x64 GUI and server, then attaches Windows and source ZIP archives to the workflow run. Pushing a tag such as `v1.0.0` creates a GitHub Release.
+
+See [Russian project documentation](PhoneMouse/README_RU.md) for setup, architecture and limitations.
+
+## Security notice
+
+The current local-network connection uses unencrypted HTTP/WebSocket. Do not expose port 8765 to the public internet or use untrusted Wi-Fi networks.
