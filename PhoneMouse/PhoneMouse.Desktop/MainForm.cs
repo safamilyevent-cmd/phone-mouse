@@ -199,6 +199,9 @@ public sealed class MainForm : Form
         catch (Exception ex)
         {
             Log("Не удалось запустить сервер: " + ex.Message);
+            var failedProcess = serverProcess;
+            serverProcess = null;
+            try { failedProcess?.Dispose(); } catch { }
             ServerExited();
         }
     }
