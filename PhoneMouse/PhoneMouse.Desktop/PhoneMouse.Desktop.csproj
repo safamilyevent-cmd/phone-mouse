@@ -10,7 +10,7 @@
       <ApplicationIcon>Assets\PhoneMouse.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="Assets\PhoneMouse.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\PhoneMouse.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="QRCoder" Version="1.6.0" />
