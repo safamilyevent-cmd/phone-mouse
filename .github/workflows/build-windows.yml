@@ -96,7 +96,8 @@ jobs:
           $winZip = Join-Path $env:GITHUB_WORKSPACE "dist\PhoneMouse-win-x64-$version.zip"
           Compress-Archive -Path (Join-Path $packageDir '*') -DestinationPath $winZip -CompressionLevel Optimal
           $sourceZip = Join-Path $env:GITHUB_WORKSPACE "dist\PhoneMouse-source-$version.zip"
-          Compress-Archive -Path @('PhoneMouse', '.github', 'README.md') -DestinationPath $sourceZip -CompressionLevel Optimal
+          git archive --format=zip --output=$sourceZip HEAD
+          if (-not (Test-Path $sourceZip)) { throw 'Source ZIP was not created.' }
           "WIN_ZIP=$winZip" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "SOURCE_ZIP=$sourceZip" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
