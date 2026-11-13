@@ -16,29 +16,19 @@ env:
 
 jobs:
   build:
-    name: Build Phone Mouse (Windows x64)
+    name: Build Phone Mouse GUI and server (Windows x64)
     runs-on: windows-2022
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Restore source archive when source folder is absent
+      - name: Verify source tree
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          if (Test-Path 'PhoneMouse/PhoneMouse.sln') {
-            Write-Host 'Using checked-in PhoneMouse source.'
-          } else {
-            if (-not (Test-Path '.source-parts')) {
-              throw 'PhoneMouse source is missing. Upload the PhoneMouse/ directory to the repository root.'
-            }
-            $parts = Get-ChildItem -Path '.source-parts' -Filter '*.b64' | Sort-Object Name
-            if (-not $parts) { throw 'No .b64 source archive parts found in .source-parts.' }
-            $encoded = ($parts | ForEach-Object { (Get-Content $_.FullName -Raw).Trim() }) -join ''
-            [IO.File]::WriteAllBytes('source.zip', [Convert]::FromBase64String($encoded))
-            Expand-Archive -Path 'source.zip' -DestinationPath '.' -Force
-            if (-not (Test-Path 'PhoneMouse/PhoneMouse.sln')) { throw 'PhoneMouse solution was not extracted.' }
-          }
+          if (-not (Test-Path 'PhoneMouse/PhoneMouse.sln')) { throw 'PhoneMouse solution is missing.' }
+          if (-not (Test-Path 'PhoneMouse/PhoneMouse.Desktop/PhoneMouse.Desktop.csproj')) { throw 'Windows GUI project is missing.' }
+          if (-not (Test-Path 'PhoneMouse/PhoneMouse.Server/PhoneMouse.Server.csproj')) { throw 'Server project is missing.' }
 
       - name: Install .NET SDK
         uses: actions/setup-dotnet@v4
@@ -54,9 +44,23 @@ jobs:
       - name: Build Release
         run: dotnet build "PhoneMouse/PhoneMouse.sln" --configuration Release --no-restore
 
-      - name: Publish self-contained Windows x64
+      - name: Publish server (self-contained)
         run: >-
           dotnet publish "PhoneMouse/PhoneMouse.Server/PhoneMouse.Server.csproj"
+          --configuration Release
+          --runtime win-x64
+          --self-contained true
+          --no-restore
+          --output "${{ github.workspace }}\publish\Server"
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -p:DebugType=None
+          -p:DebugSymbols=false
+
+      - name: Publish Windows GUI (self-contained)
+        run: >-
+          dotnet publish "PhoneMouse/PhoneMouse.Desktop/PhoneMouse.Desktop.csproj"
           --configuration Release
           --runtime win-x64
           --self-contained true
@@ -81,14 +85,14 @@ jobs:
           @echo off
           setlocal
           cd /d "%~dp0"
-          if not exist "PhoneMouse.Server.exe" (
-            echo PhoneMouse.Server.exe not found. Extract the complete ZIP again.
+          if not exist "PhoneMouse.exe" (
+            echo PhoneMouse.exe not found. Extract the complete ZIP again.
             pause
             exit /b 1
           )
-          PhoneMouse.Server.exe
-          if errorlevel 1 pause
+          start "" "PhoneMouse.exe"
           '@ | Set-Content -Path (Join-Path $packageDir 'Run-PhoneMouse.bat') -Encoding ASCII
+          if (-not (Test-Path (Join-Path $packageDir 'Server\PhoneMouse.Server.exe'))) { throw 'Published server executable is missing.' }
           $winZip = Join-Path $env:GITHUB_WORKSPACE "dist\PhoneMouse-win-x64-$version.zip"
           Compress-Archive -Path (Join-Path $packageDir '*') -DestinationPath $winZip -CompressionLevel Optimal
           $sourceZip = Join-Path $env:GITHUB_WORKSPACE "dist\PhoneMouse-source-$version.zip"
