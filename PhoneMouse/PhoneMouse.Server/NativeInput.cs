@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using NAudio.CoreAudioApi;
 
 namespace PhoneMouse.Server;
 
@@ -84,16 +85,37 @@ internal static class NativeInput
             _ => (MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP)
         };
 
-    public static void Volume(string action)
+    private static MMDevice GetDefaultAudioDevice()
     {
-        var key = action.ToLowerInvariant() switch
-        {
-            "up" => "volumeup",
-            "down" => "volumedown",
-            "mute" => "volumemute",
-            _ => ""
-        };
-        if (key.Length > 0) PressKey(key);
+        using var enumerator = new MMDeviceEnumerator();
+        return enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+    }
+
+    public static (float Level, bool Muted) GetVolume()
+    {
+        using var device = GetDefaultAudioDevice();
+        return (device.AudioEndpointVolume.MasterVolumeLevelScalar, device.AudioEndpointVolume.Mute);
+    }
+
+    public static void SetVolume(float level)
+    {
+        using var device = GetDefaultAudioDevice();
+        device.AudioEndpointVolume.MasterVolumeLevelScalar = Math.Clamp(level, 0f, 1f);
+    }
+
+    public static void ToggleMute()
+    {
+        using var device = GetDefaultAudioDevice();
+        device.AudioEndpointVolume.Mute = !device.AudioEndpointVolume.Mute;
+    }
+
+    public static void Zoom(int delta)
+    {
+        var down = new INPUT { type = INPUT_KEYBOARD, U = new InputUnion { ki = new KEYBDINPUT { wVk = 0x11 } } };
+        var wheel = new INPUT { type = INPUT_MOUSE, U = new InputUnion { mi = new MOUSEINPUT { mouseData = unchecked((uint)delta), dwFlags = MOUSEEVENTF_WHEEL } } };
+        var up = new INPUT { type = INPUT_KEYBOARD, U = new InputUnion { ki = new KEYBDINPUT { wVk = 0x11, dwFlags = KEYEVENTF_KEYUP } } };
+        var inputs = new[] { down, wheel, up };
+        SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<INPUT>());
     }
 
     public static void TypeText(string text)
