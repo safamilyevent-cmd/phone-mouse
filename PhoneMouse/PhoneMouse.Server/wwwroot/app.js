@@ -133,7 +133,7 @@ function finishPointer(e) {
         tapTimer=setTimeout(()=>{send({type:"click",button:"left"});tapTimer=null;},280);
       }
     } else if (gesture.kind==="three") {
-      const end=averagePoint(), dx=end.x-gesture.startCenter.x;
+      const end=gesture.lastCenter||gesture.startCenter, dx=end.x-gesture.startCenter.x;
       if (Math.abs(dx)>55) send({type:"hotkey",keys:dx<0?["win","tab"]:["alt","tab"]});
     }
     gesture=null;
