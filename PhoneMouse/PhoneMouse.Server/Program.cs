@@ -130,12 +130,16 @@ Console.WriteLine();
 Console.WriteLine("====================================");
 Console.WriteLine("        PHONE MOUSE SERVER");
 Console.WriteLine("====================================");
+Console.WriteLine($"PAIRING_CODE={pairingCode}");
 Console.WriteLine($"КОД СОПРЯЖЕНИЯ: {pairingCode}");
 foreach (var ip in NetworkInterface.GetAllNetworkInterfaces()
     .Where(n => n.OperationalStatus == OperationalStatus.Up)
     .SelectMany(n => n.GetIPProperties().UnicastAddresses)
     .Where(a => a.Address.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(a.Address)))
-    Console.WriteLine($"Адрес для iPhone: http://{ip.Address}:8765");
+    {
+        Console.WriteLine($"PHONE_URL=http://{ip.Address}:8765");
+        Console.WriteLine($"Адрес для iPhone: http://{ip.Address}:8765");
+    }
 Console.WriteLine("Важно: соединение работает только в локальной сети, HTTP-трафик не зашифрован.");
 Console.WriteLine("Не открывайте порт 8765 в интернет и не используйте недоверенную Wi-Fi сеть.");
 Console.WriteLine("Для остановки нажмите Ctrl+C.");
