@@ -26,6 +26,7 @@ function connect() {
     $("controlPanel").classList.remove("hidden");
     $("connectError").textContent = "";
     setStatus(true);
+    send({type:"volumeGet"});
   };
   socket.onclose = () => {
     setStatus(false);
@@ -45,11 +46,25 @@ function connect() {
       $("connectError").textContent = "Не удалось подключиться. Проверьте Wi-Fi и код.";
     }
   };
+  socket.onmessage = event => { try { const data=JSON.parse(event.data); if(data.type==="volumeState") renderVolume(data.level*100,data.muted); } catch {} };
   socket.onerror = () => { $("connectError").textContent = "Ошибка соединения. Проверьте адрес компьютера."; };
 }
 $("connectBtn").addEventListener("click", connect);
 $("code").value = localStorage.getItem("phoneMouseCode") || "";
 
+const volumeSlider=$("volumeSlider"), volumeValue=$("volumeValue"), volumeMute=$("volumeMute");
+let volumeDebounce=null;
+function renderVolume(level, muted){
+  const n=Math.max(0,Math.min(100,Math.round(level)));
+  volumeSlider.value=String(n); volumeValue.textContent=muted?"Без звука":n+"%";
+  volumeMute.textContent=muted?"Включить звук":"Выключить звук";
+  volumeMute.setAttribute("aria-pressed",String(!!muted));
+}
+volumeSlider.addEventListener("input",()=>{
+  const level=Number(volumeSlider.value); volumeValue.textContent=level+"%";
+  clearTimeout(volumeDebounce); volumeDebounce=setTimeout(()=>send({type:"volumeSet",level:level/100}),50);
+});
+volumeMute.addEventListener("click",()=>send({type:"volumeMute"}));
 const pad = $("pad");
 function averagePoint() {
   const pts = [...pointers.values()];
@@ -99,13 +114,15 @@ pad.addEventListener("pointermove", e => {
     gesture.lastCenter=center;
     const pts=[...pointers.values()],d=distance(pts[0],pts[1]);
     if(!pinchSent&&pinchStart>0&&Math.abs(d-pinchStart)>38){
-      send({type:"hotkey",keys:d>pinchStart?["ctrl","+"]:["ctrl","-"]});pinchSent=true;gesture.moved=true;
+      send({type:"zoom",delta:d>pinchStart?120:-120});pinchSent=true;gesture.moved=true;
     }
   } else if(gesture.kind==="three"&&pointers.size===3) {
     const center=averagePoint(),dx=center.x-gesture.startCenter.x,dy=center.y-gesture.startCenter.y;
     if(Math.hypot(dx,dy)>45)gesture.moved=true;
-    if(!gesture.actionSent&&Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.15){
-      send({type:"hotkey",keys:dx<0?["win","tab"]:["alt","tab"]});gesture.actionSent=true;
+    if(!gesture.actionSent && Math.abs(dy)>65 && Math.abs(dy)>Math.abs(dx)*1.15){
+      send({type:"hotkey",keys:dy<0?["win","tab"]:["win","d"]});gesture.actionSent=true;
+    } else if(!gesture.actionSent&&Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.15){
+      send({type:"hotkey",keys:dx<0?["alt","tab"]:["alt","shift","tab"]});gesture.actionSent=true;
     }
     gesture.lastCenter=center;
   }
@@ -119,8 +136,8 @@ function finishPointer(e,cancelled=false) {
   if(!cancelled&&gesture){
     if(gesture.kind==="one"&&!gesture.moved&&!dragging){
       const now=Date.now();
-      if(now-lastTapAt<280){clearTimeout(tapTimer);tapTimer=null;send({type:"doubleClick",button:"left"});lastTapAt=0;}
-      else{lastTapAt=now;tapTimer=setTimeout(()=>{send({type:"click",button:"left"});tapTimer=null;},230);}
+      if(now-lastTapAt<300){clearTimeout(tapTimer);tapTimer=null;send({type:"doubleClick",button:"left"});lastTapAt=0;}
+      else{lastTapAt=now;tapTimer=setTimeout(()=>{send({type:"click",button:"left"});tapTimer=null;},300);}
     }
     else if(gesture.kind==="two"&&!gesture.moved)send({type:"click",button:"right"});
   }
@@ -133,9 +150,7 @@ $("leftClick").addEventListener("click",()=>send({type:"click",button:"left"}));
 $("rightClick").addEventListener("click",()=>send({type:"click",button:"right"}));
 $("scrollUp").addEventListener("click",()=>send({type:"scroll",delta:480}));
 $("scrollDown").addEventListener("click",()=>send({type:"scroll",delta:-480}));
-$("volumeUp").addEventListener("click",()=>send({type:"volume",action:"up"}));
-$("volumeDown").addEventListener("click",()=>send({type:"volume",action:"down"}));
-$("volumeMute").addEventListener("click",()=>send({type:"volume",action:"mute"}));
+
 $("sendText").addEventListener("click",()=>{
   const value=$("typing").value;
   if(value){for(let i=0;i<value.length;i+=1800)send({type:"text",value:value.slice(i,i+1800)});$("typing").value="";}
