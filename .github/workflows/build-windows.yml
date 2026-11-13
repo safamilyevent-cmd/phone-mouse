@@ -58,6 +58,40 @@ jobs:
           -p:DebugType=None
           -p:DebugSymbols=false
 
+      - name: Smoke test published server
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $serverDir = Join-Path $env:GITHUB_WORKSPACE 'publish\Server'
+          $serverExe = Join-Path $serverDir 'PhoneMouse.Server.exe'
+          $stdout = Join-Path $env:RUNNER_TEMP 'phone-mouse-server.stdout.log'
+          $stderr = Join-Path $env:RUNNER_TEMP 'phone-mouse-server.stderr.log'
+          $server = Start-Process -FilePath $serverExe -WorkingDirectory $serverDir -PassThru -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr
+          try {
+            $info = $null
+            for ($i = 0; $i -lt 30; $i++) {
+              if ($server.HasExited) {
+                Get-Content $stdout, $stderr -ErrorAction SilentlyContinue
+                throw "Server exited early with code $($server.ExitCode)."
+              }
+              try {
+                $info = Invoke-RestMethod -Uri 'http://127.0.0.1:8765/api/info' -TimeoutSec 2
+                break
+              } catch { Start-Sleep -Seconds 1 }
+            }
+            if ($null -eq $info -or $info.app -ne 'Phone Mouse') {
+              Get-Content $stdout, $stderr -ErrorAction SilentlyContinue
+              throw 'Server HTTP health check failed.'
+            }
+            $page = Invoke-WebRequest -Uri 'http://127.0.0.1:8765/' -TimeoutSec 5
+            if ($page.StatusCode -ne 200 -or $page.Content -notmatch 'Phone Mouse') {
+              throw 'Web control page did not load.'
+            }
+            Write-Host 'Server API and web control page smoke tests passed.'
+          } finally {
+            if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force }
+          }
+
       - name: Publish Windows GUI (self-contained)
         run: >-
           dotnet publish "PhoneMouse/PhoneMouse.Desktop/PhoneMouse.Desktop.csproj"
