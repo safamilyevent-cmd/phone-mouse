@@ -7,6 +7,9 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using PhoneMouse.Server;
 
+Console.OutputEncoding = Encoding.UTF8;
+Console.InputEncoding = Encoding.UTF8;
+
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls("http://0.0.0.0:8765");
 
