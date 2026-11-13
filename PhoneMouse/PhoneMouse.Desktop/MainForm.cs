@@ -212,6 +212,8 @@ public sealed class MainForm : Form
             {
                 pairingCode = line["КОД СОПРЯЖЕНИЯ:".Length..].Trim();
                 codeLabel.Text = "Код сопряжения: " + pairingCode;
+                statusLabel.Text = "● Сервер работает";
+                statusLabel.ForeColor = Color.FromArgb(90, 220, 160);
                 UpdateQr();
             }
             else if (line.StartsWith("Адрес для iPhone:", StringComparison.Ordinal))
@@ -237,11 +239,6 @@ public sealed class MainForm : Form
             {
                 connectionLabel.Text = "● iPhone отключён";
                 connectionLabel.ForeColor = Color.FromArgb(240, 180, 140);
-            }
-            else if (line.StartsWith("КОД СОПРЯЖЕНИЯ:", StringComparison.Ordinal))
-            {
-                statusLabel.Text = "● Сервер работает";
-                statusLabel.ForeColor = Color.FromArgb(90, 220, 160);
             }
         });
     }
