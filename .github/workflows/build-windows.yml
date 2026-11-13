@@ -2,7 +2,7 @@ name: Build Windows x64 and release ZIP
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/trackpad-audio]
     tags: ['v*']
   pull_request:
     branches: [main]
@@ -134,6 +134,24 @@ jobs:
           if (-not (Test-Path $sourceZip)) { throw 'Source ZIP was not created.' }
           "WIN_ZIP=$winZip" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "SOURCE_ZIP=$sourceZip" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Build Windows installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          choco install innosetup --yes --no-progress
+          $compiler = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $compiler)) { throw 'Inno Setup compiler not found.' }
+          & $compiler 'installer\PhoneMouse.iss'
+          if (-not (Test-Path 'dist\PhoneMouse-Setup.exe')) { throw 'Windows installer was not created.' }
+
+      - name: Upload Windows installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PhoneMouse-Setup
+          path: dist/PhoneMouse-Setup.exe
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Upload Windows ZIP artifact
         uses: actions/upload-artifact@v4

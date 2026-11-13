@@ -29,12 +29,14 @@
       <div class="section-head"><div><div class="eyebrow">СЕНСОРНАЯ ПАНЕЛЬ</div><h2>Управление курсором</h2></div><span class="live-pill">LIVE</span></div>
       <div id="pad" class="trackpad">
         <div class="pad-mark"><span></span><span></span><span></span></div>
-        <div class="pad-hint">Проводи пальцем, чтобы двигать курсор</div>
+        <div id="padHint" class="pad-hint">Веди пальцем · тап — клик · два пальца — прокрутка</div>
       </div>
+      <p class="gesture-help">Один палец — курсор и тап для клика · двойной тап — двойной клик · удержание — перетаскивание · два пальца — прокрутка и масштаб · три пальца вверх — обзор окон, в стороны — переключение</p>
       <div class="mouse-buttons">
         <button id="leftClick" class="mouse-btn">ЛЕВЫЙ КЛИК</button>
         <button id="rightClick" class="mouse-btn">ПРАВЫЙ КЛИК</button>
       </div>
+      <section class="volume panel"><div><div class="eyebrow">ЗВУК WINDOWS</div><h2>Громкость</h2></div><div class="volume-control"><div class="volume-readout"><span id="volumeValue">—%</span><button id="volumeMute" class="tool-btn" aria-label="Выключить звук">Выключить звук</button></div><input id="volumeSlider" type="range" min="0" max="100" step="1" value="50" aria-label="Громкость Windows"></div></section>
       <div class="sensitivity panel">
         <label for="sensitivity">Чувствительность курсора</label>
         <input id="sensitivity" type="range" min="0.6" max="3.5" step="0.1" value="1.8">

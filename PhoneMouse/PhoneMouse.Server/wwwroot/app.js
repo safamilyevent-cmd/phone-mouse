@@ -2,7 +2,8 @@ const $ = id => document.getElementById(id);
 let socket = null, moveQueue = [], moveTimer = null, reconnectTimer = null;
 let connectedOnce = false, manuallyClosed = false;
 const pointers = new Map();
-let lastTap = 0;
+let gesture = null, tapTimer = null, lastTapAt = 0, longPressTimer = null;
+let dragging = false, pinchStart = 0, pinchSent = false;
 
 function setStatus(connected) {
   $("status").classList.toggle("connected", connected);
@@ -25,6 +26,7 @@ function connect() {
     $("controlPanel").classList.remove("hidden");
     $("connectError").textContent = "";
     setStatus(true);
+    send({type:"volumeGet"});
   };
   socket.onclose = () => {
     setStatus(false);
@@ -44,54 +46,117 @@ function connect() {
       $("connectError").textContent = "Не удалось подключиться. Проверьте Wi-Fi и код.";
     }
   };
+  socket.onmessage = event => { try { const data=JSON.parse(event.data); if(data.type==="volumeState") renderVolume(data.level*100,data.muted); } catch {} };
   socket.onerror = () => { $("connectError").textContent = "Ошибка соединения. Проверьте адрес компьютера."; };
 }
 $("connectBtn").addEventListener("click", connect);
 $("code").value = localStorage.getItem("phoneMouseCode") || "";
 
+const volumeSlider=$("volumeSlider"), volumeValue=$("volumeValue"), volumeMute=$("volumeMute");
+let volumeDebounce=null;
+function renderVolume(level, muted){
+  const n=Math.max(0,Math.min(100,Math.round(level)));
+  volumeSlider.value=String(n); volumeValue.textContent=muted?"Без звука":n+"%";
+  volumeMute.textContent=muted?"Включить звук":"Выключить звук";
+  volumeMute.setAttribute("aria-pressed",String(!!muted));
+}
+volumeSlider.addEventListener("input",()=>{
+  const level=Number(volumeSlider.value); volumeValue.textContent=level+"%";
+  clearTimeout(volumeDebounce); volumeDebounce=setTimeout(()=>send({type:"volumeSet",level:level/100}),50);
+});
+volumeMute.addEventListener("click",()=>send({type:"volumeMute"}));
 const pad = $("pad");
+function averagePoint() {
+  const pts = [...pointers.values()];
+  return {x:pts.reduce((s,p)=>s+p.x,0)/pts.length,y:pts.reduce((s,p)=>s+p.y,0)/pts.length};
+}
+function distance(a,b) { return Math.hypot(a.x-b.x,a.y-b.y); }
+function resetGesture() {
+  clearTimeout(longPressTimer); gesture=null; pointers.clear(); dragging=false; pinchStart=0; pinchSent=false;
+}
+pad.addEventListener("contextmenu", e => e.preventDefault());
 pad.addEventListener("pointerdown", e => {
-  e.preventDefault();
-  pad.setPointerCapture(e.pointerId);
-  pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  e.preventDefault(); pad.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if (pointers.size===1) {
+    gesture={kind:"one",start:{x:e.clientX,y:e.clientY},moved:false,multi:false};
+    longPressTimer=setTimeout(()=>{
+      if(pointers.size===1 && gesture?.kind==="one" && !gesture.moved){
+        send({type:"mouseDown",button:"left"}); dragging=true;
+        $("padHint").textContent="Перетаскивание — отпусти палец";
+      }
+    },480);
+  } else if(pointers.size===2 && gesture) {
+    clearTimeout(longPressTimer); gesture.kind="two"; gesture.multi=true;
+    gesture.startCenter=averagePoint(); gesture.lastCenter=gesture.startCenter;
+    const pts=[...pointers.values()]; pinchStart=distance(pts[0],pts[1]); pinchSent=false;
+  } else if(pointers.size===3 && gesture) {
+    clearTimeout(longPressTimer); gesture.kind="three"; gesture.multi=true;
+    gesture.startCenter=averagePoint(); gesture.lastCenter=gesture.startCenter; gesture.moved=false;
+  } else if(pointers.size>3 && gesture) { clearTimeout(longPressTimer); gesture.kind="unsupported"; gesture.multi=true; }
 });
 pad.addEventListener("pointermove", e => {
-  if (!pointers.has(e.pointerId)) return;
-  const previous = pointers.get(e.pointerId);
-  const dx = e.clientX - previous.x, dy = e.clientY - previous.y;
-  pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
-  if (pointers.size >= 2) {
-    send({type:"scroll", delta:Math.round(-dy * 9)});
-  } else {
-    const sensitivity = Number($("sensitivity")?.value || 1.8);
-    moveQueue.push({dx:dx*sensitivity,dy:dy*sensitivity});
-    if (!moveTimer) moveTimer = setTimeout(() => {
-      const total = moveQueue.reduce((a,m)=>({dx:a.dx+m.dx,dy:a.dy+m.dy}),{dx:0,dy:0});
-      send({type:"move",dx:total.dx,dy:total.dy});
-      moveQueue=[]; moveTimer=null;
-    }, 10);
+  if(!pointers.has(e.pointerId)||!gesture)return;
+  const previous=pointers.get(e.pointerId), current={x:e.clientX,y:e.clientY}; pointers.set(e.pointerId,current);
+  if(gesture.kind==="one"&&pointers.size===1) {
+    const dx=current.x-previous.x,dy=current.y-previous.y;
+    if(Math.hypot(current.x-gesture.start.x,current.y-gesture.start.y)>7){gesture.moved=true;clearTimeout(longPressTimer);}
+    if(gesture.moved){
+      const sensitivity=Number($("sensitivity").value||1.8); moveQueue.push({dx:dx*sensitivity,dy:dy*sensitivity});
+      if(!moveTimer)moveTimer=setTimeout(()=>{
+        const total=moveQueue.reduce((a,m)=>({dx:a.dx+m.dx,dy:a.dy+m.dy}),{dx:0,dy:0});
+        send({type:"move",dx:total.dx,dy:total.dy});moveQueue=[];moveTimer=null;
+      },8);
+    }
+  } else if(gesture.kind==="two"&&pointers.size===2) {
+    const center=averagePoint(),deltaY=center.y-gesture.lastCenter.y;
+    if(Math.abs(deltaY)>1){gesture.moved=true;send({type:"scroll",delta:Math.round(-deltaY*5)});}
+    gesture.lastCenter=center;
+    const pts=[...pointers.values()],d=distance(pts[0],pts[1]);
+    if(!pinchSent&&pinchStart>0&&Math.abs(d-pinchStart)>38){
+      send({type:"zoom",delta:d>pinchStart?120:-120});pinchSent=true;gesture.moved=true;
+    }
+  } else if(gesture.kind==="three"&&pointers.size===3) {
+    const center=averagePoint(),dx=center.x-gesture.startCenter.x,dy=center.y-gesture.startCenter.y;
+    if(Math.hypot(dx,dy)>45)gesture.moved=true;
+    if(!gesture.actionSent && Math.abs(dy)>65 && Math.abs(dy)>Math.abs(dx)*1.15){
+      send({type:"hotkey",keys:dy<0?["win","tab"]:["win","d"]});gesture.actionSent=true;
+    } else if(!gesture.actionSent&&Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.15){
+      send({type:"hotkey",keys:dx<0?["alt","tab"]:["alt","shift","tab"]});gesture.actionSent=true;
+    }
+    gesture.lastCenter=center;
   }
 });
-function endPointer(e) { pointers.delete(e.pointerId); }
-pad.addEventListener("pointerup", endPointer);
-pad.addEventListener("pointercancel", endPointer);
+function finishPointer(e,cancelled=false) {
+  if(!pointers.has(e.pointerId))return;
+  pointers.delete(e.pointerId);
+  if(dragging){send({type:"mouseUp",button:"left"});dragging=false;$("padHint").textContent="Веди пальцем · тап — клик · два пальца — прокрутка";}
+  if(pointers.size!==0)return;
+  clearTimeout(longPressTimer);
+  if(!cancelled&&gesture){
+    if(gesture.kind==="one"&&!gesture.moved&&!dragging){
+      const now=Date.now();
+      if(now-lastTapAt<300){clearTimeout(tapTimer);tapTimer=null;send({type:"doubleClick",button:"left"});lastTapAt=0;}
+      else{lastTapAt=now;tapTimer=setTimeout(()=>{send({type:"click",button:"left"});tapTimer=null;},300);}
+    }
+    else if(gesture.kind==="two"&&!gesture.moved)send({type:"click",button:"right"});
+  }
+  resetGesture();
+}
+pad.addEventListener("pointerup",e=>finishPointer(e,false));
+pad.addEventListener("pointercancel",e=>finishPointer(e,true));
 
 $("leftClick").addEventListener("click",()=>send({type:"click",button:"left"}));
 $("rightClick").addEventListener("click",()=>send({type:"click",button:"right"}));
 $("scrollUp").addEventListener("click",()=>send({type:"scroll",delta:480}));
 $("scrollDown").addEventListener("click",()=>send({type:"scroll",delta:-480}));
+
 $("sendText").addEventListener("click",()=>{
   const value=$("typing").value;
-  if(value){
-    for(let i=0;i<value.length;i+=1800) send({type:"text",value:value.slice(i,i+1800)});
-    $("typing").value="";
-  }
+  if(value){for(let i=0;i<value.length;i+=1800)send({type:"text",value:value.slice(i,i+1800)});$("typing").value="";}
 });
 document.querySelectorAll("[data-key]").forEach(b=>b.addEventListener("click",()=>send({type:"key",value:b.dataset.key})));
 document.querySelectorAll("[data-hotkey]").forEach(b=>b.addEventListener("click",()=>send({type:"hotkey",keys:b.dataset.hotkey.split("+")})));
-$("disconnectBtn").addEventListener("click",()=>{manuallyClosed=true; connectedOnce=false; clearTimeout(reconnectTimer); if(socket)socket.close();});
-if (new URLSearchParams(location.search).has("code")) {
-  $("code").value = new URLSearchParams(location.search).get("code");
-  connect();
-}
-if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("/sw.js").catch(()=>{});
+$("disconnectBtn").addEventListener("click",()=>{manuallyClosed=true;connectedOnce=false;clearTimeout(reconnectTimer);if(socket)socket.close();});
+if(new URLSearchParams(location.search).has("code")){$("code").value=new URLSearchParams(location.search).get("code");connect();}
+if("serviceWorker"in navigator&&location.protocol==="https:")navigator.serviceWorker.register("/sw.js").catch(()=>{});

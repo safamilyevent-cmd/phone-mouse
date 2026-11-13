@@ -96,6 +96,29 @@ app.Map("/ws", async (HttpContext context) =>
                 case "click":
                     NativeInput.Click(msg.TryGetProperty("button", out var b) ? b.GetString() : "left");
                     break;
+                case "doubleClick":
+                    NativeInput.DoubleClick(msg.TryGetProperty("button", out var db) ? db.GetString() : "left");
+                    break;
+                case "mouseDown":
+                    NativeInput.MouseDown(msg.TryGetProperty("button", out var down) ? down.GetString() : "left");
+                    break;
+                case "mouseUp":
+                    NativeInput.MouseUp(msg.TryGetProperty("button", out var up) ? up.GetString() : "left");
+                    break;
+                case "volumeGet":
+                    await SendVolumeState(socket, context.RequestAborted);
+                    break;
+                case "volumeSet":
+                    NativeInput.SetVolume((float)Clamp(msg.GetProperty("level").GetDouble(), 0, 1));
+                    await SendVolumeState(socket, context.RequestAborted);
+                    break;
+                case "volumeMute":
+                    NativeInput.ToggleMute();
+                    await SendVolumeState(socket, context.RequestAborted);
+                    break;
+                case "zoom":
+                    NativeInput.Zoom((int)Clamp(msg.GetProperty("delta").GetDouble(), -120, 120));
+                    break;
                 case "scroll":
                     NativeInput.Scroll((int)Clamp(msg.GetProperty("delta").GetDouble(), -1200, 1200));
                     break;
@@ -146,6 +169,13 @@ Console.WriteLine("Для остановки нажмите Ctrl+C.");
 Console.WriteLine();
 
 app.Run();
+
+static async Task SendVolumeState(WebSocket socket, CancellationToken cancellationToken)
+{
+    var state = NativeInput.GetVolume();
+    var payload = JsonSerializer.SerializeToUtf8Bytes(new { type = "volumeState", level = state.Level, muted = state.Muted });
+    await socket.SendAsync(payload, WebSocketMessageType.Text, true, cancellationToken);
+}
 
 static double Clamp(double value, double min, double max) => Math.Max(min, Math.Min(max, value));
 

@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using NAudio.CoreAudioApi;
 
 namespace PhoneMouse.Server;
 
@@ -69,6 +70,54 @@ internal static class NativeInput
 
     public static void Scroll(int delta) => SendMouse(MOUSEEVENTF_WHEEL, data: unchecked((uint)delta));
 
+    public static void MouseDown(string? button) => SendMouse(ButtonFlags(button).Item1);
+    public static void MouseUp(string? button) => SendMouse(ButtonFlags(button).Item2);
+    public static void DoubleClick(string? button)
+    {
+        Click(button);
+        Click(button);
+    }
+    private static (uint, uint) ButtonFlags(string? button) =>
+        (button ?? "left").ToLowerInvariant() switch
+        {
+            "right" => (MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP),
+            "middle" => (MOUSEEVENTF_MIDDLEDOWN, MOUSEEVENTF_MIDDLEUP),
+            _ => (MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP)
+        };
+
+    private static MMDevice GetDefaultAudioDevice()
+    {
+        using var enumerator = new MMDeviceEnumerator();
+        return enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+    }
+
+    public static (float Level, bool Muted) GetVolume()
+    {
+        using var device = GetDefaultAudioDevice();
+        return (device.AudioEndpointVolume.MasterVolumeLevelScalar, device.AudioEndpointVolume.Mute);
+    }
+
+    public static void SetVolume(float level)
+    {
+        using var device = GetDefaultAudioDevice();
+        device.AudioEndpointVolume.MasterVolumeLevelScalar = Math.Clamp(level, 0f, 1f);
+    }
+
+    public static void ToggleMute()
+    {
+        using var device = GetDefaultAudioDevice();
+        device.AudioEndpointVolume.Mute = !device.AudioEndpointVolume.Mute;
+    }
+
+    public static void Zoom(int delta)
+    {
+        var down = new INPUT { type = INPUT_KEYBOARD, U = new InputUnion { ki = new KEYBDINPUT { wVk = 0x11 } } };
+        var wheel = new INPUT { type = INPUT_MOUSE, U = new InputUnion { mi = new MOUSEINPUT { mouseData = unchecked((uint)delta), dwFlags = MOUSEEVENTF_WHEEL } } };
+        var up = new INPUT { type = INPUT_KEYBOARD, U = new InputUnion { ki = new KEYBDINPUT { wVk = 0x11, dwFlags = KEYEVENTF_KEYUP } } };
+        var inputs = new[] { down, wheel, up };
+        SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<INPUT>());
+    }
+
     public static void TypeText(string text)
     {
         foreach (var ch in text)
@@ -97,6 +146,7 @@ internal static class NativeInput
             "f1" => 0x70, "f2" => 0x71, "f3" => 0x72, "f4" => 0x73,
             "f5" => 0x74, "f6" => 0x75, "f7" => 0x76, "f8" => 0x77,
             "f9" => 0x78, "f10" => 0x79, "f11" => 0x7A, "f12" => 0x7B,
+            "volumeup" => 0xAF, "volumedown" => 0xAE, "volumemute" => 0xAD,
             _ => (ushort)0
         };
         if (vk == 0) return;
@@ -125,7 +175,7 @@ internal static class NativeInput
         "backspace" => 0x08, "delete" => 0x2E,
         "up" => 0x26, "down" => 0x28, "left" => 0x25, "right" => 0x27,
         "home" => 0x24, "end" => 0x23, "pageup" => 0x21, "pagedown" => 0x22,
-        "a" => 0x41, "b" => 0x42, "c" => 0x43, "d" => 0x44, "e" => 0x45,
+        "+" => 0xBB, "-" => 0xBD, "a" => 0x41, "b" => 0x42, "c" => 0x43, "d" => 0x44, "e" => 0x45,
         "f" => 0x46, "g" => 0x47, "h" => 0x48, "i" => 0x49, "j" => 0x4A,
         "k" => 0x4B, "l" => 0x4C, "m" => 0x4D, "n" => 0x4E, "o" => 0x4F,
         "p" => 0x50, "q" => 0x51, "r" => 0x52, "s" => 0x53, "t" => 0x54,
