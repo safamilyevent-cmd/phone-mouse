@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -53,8 +54,11 @@ app.Map("/ws", async (HttpContext context) =>
     }
 
     using var socket = await context.WebSockets.AcceptWebSocketAsync();
+    Console.WriteLine("CLIENT_CONNECTED");
     var buffer = new byte[8192];
 
+    try
+    {
     while (socket.State == WebSocketState.Open && !context.RequestAborted.IsCancellationRequested)
     {
         using var ms = new MemoryStream();
@@ -109,6 +113,11 @@ app.Map("/ws", async (HttpContext context) =>
         {
             // Ignore malformed or unsupported input; keep the connection alive.
         }
+    }
+    }
+    finally
+    {
+        Console.WriteLine("CLIENT_DISCONNECTED");
     }
 });
 
