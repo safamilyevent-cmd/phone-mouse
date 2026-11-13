@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Text;
 using QRCoder;
 
 namespace PhoneMouse.Desktop;
@@ -186,6 +187,8 @@ public sealed class MainForm : Form
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8,
                 CreateNoWindow = true
             };
             serverProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
