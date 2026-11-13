@@ -117,7 +117,11 @@ function finishPointer(e,cancelled=false) {
   if(pointers.size!==0)return;
   clearTimeout(longPressTimer);
   if(!cancelled&&gesture){
-    if(gesture.kind==="one"&&!gesture.moved&&!dragging)send({type:"click",button:"left"});
+    if(gesture.kind==="one"&&!gesture.moved&&!dragging){
+      const now=Date.now();
+      if(now-lastTapAt<280){clearTimeout(tapTimer);tapTimer=null;send({type:"doubleClick",button:"left"});lastTapAt=0;}
+      else{lastTapAt=now;tapTimer=setTimeout(()=>{send({type:"click",button:"left"});tapTimer=null;},230);}
+    }
     else if(gesture.kind==="two"&&!gesture.moved)send({type:"click",button:"right"});
   }
   resetGesture();
