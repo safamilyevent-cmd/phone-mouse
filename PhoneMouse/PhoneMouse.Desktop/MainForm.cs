@@ -255,8 +255,11 @@ public sealed class MainForm : Form
         {
             using var generator = new QRCodeGenerator();
             using var data = generator.CreateQrCode(url, QRCodeGenerator.ECCLevel.Q);
-            using var qr = new QRCode(data);
-            var bitmap = qr.GetGraphic(8, Color.FromArgb(20, 20, 25), Color.White, true);
+            var qr = new PngByteQRCode(data);
+            var pngBytes = qr.GetGraphic(8);
+            using var stream = new MemoryStream(pngBytes);
+            using var decoded = new Bitmap(stream);
+            var bitmap = new Bitmap(decoded);
             var old = qrPicture.Image;
             qrPicture.Image = bitmap;
             old?.Dispose();
