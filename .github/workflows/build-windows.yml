@@ -135,7 +135,7 @@ jobs:
           "WIN_ZIP=$winZip" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "SOURCE_ZIP=$sourceZip" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      - name: Upload Windows ZIP artifact
+      - name: Build Windows installer\n        shell: pwsh\n        run: |\n          $ErrorActionPreference = 'Stop'\n          choco install innosetup --yes --no-progress\n          $compiler = 'C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe'\n          if (-not (Test-Path $compiler)) { throw 'Inno Setup compiler not found.' }\n          & $compiler 'installer\\PhoneMouse.iss'\n          if (-not (Test-Path 'dist\\PhoneMouse-Setup.exe')) { throw 'Windows installer was not created.' }\n\n      - name: Upload Windows installer artifact\n        uses: actions/upload-artifact@v4\n        with:\n          name: PhoneMouse-Setup\n          path: dist/PhoneMouse-Setup.exe\n          if-no-files-found: error\n          retention-days: 30\n\n      - name: Upload Windows ZIP artifact
         uses: actions/upload-artifact@v4
         with:
           name: PhoneMouse-win-x64

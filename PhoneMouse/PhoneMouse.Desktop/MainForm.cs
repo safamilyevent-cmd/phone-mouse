@@ -10,6 +10,7 @@ namespace PhoneMouse.Desktop;
 
 public sealed class MainForm : Form
 {
+    private readonly PictureBox brandIcon = new();
     private readonly Button startButton = new();
     private readonly Button stopButton = new();
     private readonly Button copyButton = new();
@@ -27,6 +28,7 @@ public sealed class MainForm : Form
     public MainForm()
     {
         Text = "Phone Mouse";
+        try { Icon = new Icon(Path.Combine(AppContext.BaseDirectory, "Assets", "PhoneMouse.ico")); } catch { }
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(760, 620);
         Size = new Size(900, 720);
@@ -41,14 +43,17 @@ public sealed class MainForm : Form
     private void BuildInterface()
     {
         var header = new Panel { Dock = DockStyle.Top, Height = 82, Padding = new Padding(24, 16, 24, 12), BackColor = Color.FromArgb(25, 26, 35) };
-        var title = new Label { Text = "Phone Mouse", Font = new Font("Segoe UI Semibold", 21F), AutoSize = true, Location = new Point(22, 10), ForeColor = Color.White };
-        var subtitle = new Label { Text = "Управление компьютером с iPhone по Wi-Fi", AutoSize = true, Location = new Point(25, 47), ForeColor = Color.FromArgb(160, 164, 180) };
+        brandIcon.SetBounds(18, 7, 64, 64);
+        brandIcon.SizeMode = PictureBoxSizeMode.Zoom;
+        try { brandIcon.Image = new Icon(Path.Combine(AppContext.BaseDirectory, "Assets", "PhoneMouse.ico")).ToBitmap(); } catch { }
+        var title = new Label { Text = "Phone Mouse", Font = new Font("Segoe UI Semibold", 21F), AutoSize = true, Location = new Point(94, 10), ForeColor = Color.White };
+        var subtitle = new Label { Text = "Управление компьютером с iPhone по Wi-Fi", AutoSize = true, Location = new Point(97, 47), ForeColor = Color.FromArgb(160, 164, 180) };
         statusLabel.Text = "● Сервер остановлен";
         statusLabel.AutoSize = true;
         statusLabel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
         statusLabel.Location = new Point(650, 28);
         statusLabel.ForeColor = Color.FromArgb(240, 160, 160);
-        header.Controls.AddRange(new Control[] { title, subtitle, statusLabel });
+        header.Controls.AddRange(new Control[] { brandIcon, title, subtitle, statusLabel });
         Controls.Add(header);
 
         var body = new Panel { Dock = DockStyle.Fill, Padding = new Padding(22), AutoScroll = true };

@@ -7,7 +7,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>PhoneMouse</AssemblyName>
     <RootNamespace>PhoneMouse.Desktop</RootNamespace>
+      <ApplicationIcon>Assets\PhoneMouse.ico</ApplicationIcon>
   </PropertyGroup>
+  <ItemGroup>
+    <Content Include="Assets\PhoneMouse.ico" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="QRCoder" Version="1.6.0" />
   </ItemGroup>
