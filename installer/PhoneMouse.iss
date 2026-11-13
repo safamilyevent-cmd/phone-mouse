@@ -1,7 +1,6 @@
 #define AppName "Phone Mouse"
 #define AppVersion "1.0.0"
 #define SourceDir "..\\dist\\PhoneMouse-win-x64"
-#define IconFile "..\\PhoneMouse\\PhoneMouse.Desktop\\Assets\\PhoneMouse.ico"
 
 [Setup]
 AppId={{9A6C90C3-4F0D-4F1E-9D9A-3B7A6D7A0E21}
@@ -11,7 +10,6 @@ AppPublisher=Phone Mouse
 DefaultDirName={autopf}\\Phone Mouse
 DefaultGroupName=Phone Mouse
 UninstallDisplayIcon={app}\\PhoneMouse.exe
-SetupIconFile={#IconFile}
 OutputDir=..\\dist
 OutputBaseFilename=PhoneMouse-Setup
 ArchitecturesAllowed=x64
