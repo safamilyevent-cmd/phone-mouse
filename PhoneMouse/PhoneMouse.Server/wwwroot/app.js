@@ -66,7 +66,7 @@ pad.addEventListener("pointerdown", e => {
   pad.setPointerCapture(e.pointerId);
   pointers.set(e.pointerId, {x:e.clientX,y:e.clientY});
   if (pointers.size === 1) {
-    gesture = {start:{x:e.clientX,y:e.clientY},last:{x:e.clientX,y:e.clientY},moved:false};
+    gesture = {start:{x:e.clientX,y:e.clientY},last:{x:e.clientX,y:e.clientY},moved:false,pointerCount:1};
     pinchSent = false;
     longPressTimer = setTimeout(() => {
       if (pointers.size === 1 && gesture && !gesture.moved) {
@@ -80,10 +80,10 @@ pad.addEventListener("pointerdown", e => {
     clearTimeout(longPressTimer);
     const pts=[...pointers.values()];
     pinchStart=distance(pts[0],pts[1]);
-    gesture={...gesture,kind:"two",lastCenter:averagePoint()};
+    gesture={...gesture,kind:"two",pointerCount:2,lastCenter:averagePoint()};
   } else if (pointers.size === 3) {
     clearTimeout(longPressTimer);
-    gesture={...gesture,kind:"three",startCenter:averagePoint(),lastCenter:averagePoint()};
+    gesture={...gesture,kind:"three",pointerCount:3,startCenter:averagePoint(),lastCenter:averagePoint()};
   }
 });
 pad.addEventListener("pointermove", e => {
@@ -107,12 +107,12 @@ pad.addEventListener("pointermove", e => {
     }
   } else if (pointers.size === 2) {
     const center=averagePoint(), deltaY=center.y-gesture.lastCenter.y;
-    if (Math.abs(deltaY)>0.5) send({type:"scroll",delta:Math.round(-deltaY*7)});
+    if (Math.abs(deltaY)>0.5) { gesture.moved=true; send({type:"scroll",delta:Math.round(-deltaY*7)}); }
     gesture.lastCenter=center;
     const pts=[...pointers.values()], d=distance(pts[0],pts[1]);
     if (!pinchSent && pinchStart>0 && Math.abs(d-pinchStart)>38) {
       send({type:"hotkey",keys:d>pinchStart?["ctrl","+"]:["ctrl","-"]});
-      pinchSent=true;
+      pinchSent=true; gesture.moved=true;
     }
   }
 });
