@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#101116">
+  <title>Phone Mouse</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <div class="brand"><span class="logo">⌁</span><div><h1>Phone Mouse</h1><p>WIRELESS CONTROL</p></div></div>
+      <div id="status" class="status"><i></i><span>Не подключено</span></div>
+    </header>
+
+    <section id="connectPanel" class="panel connect">
+      <div class="eyebrow">ПОДКЛЮЧЕНИЕ К WINDOWS</div>
+      <h2>Подключим устройства</h2>
+      <p class="muted">Открой адрес сервера, который показан в окне Phone Mouse на ноутбуке. Введи код сопряжения.</p>
+      <label for="code">Код сопряжения</label>
+      <input id="code" inputmode="numeric" maxlength="12" placeholder="Например, 123456">
+      <button id="connectBtn" class="primary">Подключиться <span>→</span></button>
+      <p id="connectError" class="error"></p>
+    </section>
+
+    <section id="controlPanel" class="hidden">
+      <div class="section-head"><div><div class="eyebrow">СЕНСОРНАЯ ПАНЕЛЬ</div><h2>Управление курсором</h2></div><span class="live-pill">LIVE</span></div>
+      <div id="pad" class="trackpad">
+        <div class="pad-mark"><span></span><span></span><span></span></div>
+        <div class="pad-hint">Проводи пальцем, чтобы двигать курсор</div>
+      </div>
+      <div class="mouse-buttons">
+        <button id="leftClick" class="mouse-btn">ЛЕВЫЙ КЛИК</button>
+        <button id="rightClick" class="mouse-btn">ПРАВЫЙ КЛИК</button>
+      </div>
+      <div class="sensitivity panel">
+        <label for="sensitivity">Чувствительность курсора</label>
+        <input id="sensitivity" type="range" min="0.6" max="3.5" step="0.1" value="1.8">
+      </div>
+      <div class="tool-row">
+        <button id="scrollUp" class="tool-btn">↑ <small>Прокрутка</small></button>
+        <button id="scrollDown" class="tool-btn">↓ <small>Прокрутка</small></button>
+        <button id="disconnectBtn" class="tool-btn disconnect">Отключить</button>
+      </div>
+
+      <section class="keyboard panel">
+        <div class="section-head"><div><div class="eyebrow">ВВОД ТЕКСТА</div><h2>Клавиатура</h2></div></div>
+        <textarea id="typing" rows="3" placeholder="Напиши текст здесь..."></textarea>
+        <div class="keyboard-actions">
+          <button id="sendText" class="primary">Отправить текст</button>
+          <button data-key="enter" class="key">↵ Enter</button>
+          <button data-key="backspace" class="key">⌫</button>
+        </div>
+        <div class="key-row">
+          <button data-hotkey="ctrl+c" class="key">Ctrl+C</button><button data-hotkey="ctrl+v" class="key">Ctrl+V</button><button data-hotkey="ctrl+a" class="key">Ctrl+A</button>
+        </div>
+        <div class="key-row">
+          <button data-key="tab" class="key">Tab</button><button data-key="escape" class="key">Esc</button>
+          <button data-key="up" class="key">↑</button><button data-key="down" class="key">↓</button>
+          <button data-key="left" class="key">←</button><button data-key="right" class="key">→</button>
+        </div>
+        <p class="tiny muted">Текст отправляется на ноутбук после нажатия кнопки. Поддерживаются русские и английские символы.</p>
+      </section>
+    </section>
+    <footer>PHONE MOUSE <span>•</span> Работает в вашей локальной сети</footer>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
