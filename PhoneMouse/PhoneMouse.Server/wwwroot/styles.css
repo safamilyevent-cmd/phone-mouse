@@ -14,3 +14,11 @@ button{border:0;color:inherit;font:inherit;cursor:pointer;touch-action:manipulat
 .keyboard{padding:16px;margin-top:18px}.keyboard .section-head{margin:0 0 12px}.keyboard textarea{resize:vertical;min-height:82px}.keyboard-actions{gap:7px;margin-top:9px}.keyboard-actions .primary{flex:1;font-size:12px;padding:13px 8px}.key{background:#292b36;border:1px solid #3a3d49;border-radius:10px;padding:12px 11px;font-size:12px}.keyboard-actions .key{min-width:58px}.key-row{gap:6px;margin-top:8px;justify-content:space-between}.key-row .key{flex:1;padding:11px 2px}.tiny{font-size:10px;margin-bottom:0}footer{text-align:center;margin-top:28px;font-size:9px}footer span{color:var(--accent);padding:0 5px}
 @media(max-width:380px){.app{padding:16px 12px}.trackpad{height:235px}.panel{padding:16px}.mouse-btn{font-size:9px}}
 .sensitivity{margin-top:12px;padding:12px 16px}.sensitivity label{display:block;color:var(--muted);font-size:11px;margin-bottom:6px}.sensitivity input{padding:0;border:0;background:transparent;accent-color:var(--accent)}
+.gesture-help{color:var(--muted);font-size:11px;line-height:1.55;margin:9px 4px 14px}
+.volume{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;margin-top:14px}
+.volume h2{font-size:18px;margin:5px 0 0}
+.volume-buttons{display:flex;align-items:center;gap:7px}
+.volume-buttons .tool-btn{min-width:44px;padding:12px 10px;font-size:18px}
+.volume-buttons #volumeMute{font-size:10px;white-space:nowrap}
+.pad-hint{max-width:90%;text-align:center;line-height:1.5}
+@media(max-width:380px){.volume{align-items:flex-start;flex-direction:column}.volume-buttons{width:100%}.volume-buttons .tool-btn{flex:1}}
