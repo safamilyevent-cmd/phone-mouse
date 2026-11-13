@@ -69,6 +69,33 @@ internal static class NativeInput
 
     public static void Scroll(int delta) => SendMouse(MOUSEEVENTF_WHEEL, data: unchecked((uint)delta));
 
+    public static void MouseDown(string? button) => SendMouse(ButtonFlags(button).Item1);
+    public static void MouseUp(string? button) => SendMouse(ButtonFlags(button).Item2);
+    public static void DoubleClick(string? button)
+    {
+        Click(button);
+        Click(button);
+    }
+    private static (uint, uint) ButtonFlags(string? button) =>
+        (button ?? "left").ToLowerInvariant() switch
+        {
+            "right" => (MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP),
+            "middle" => (MOUSEEVENTF_MIDDLEDOWN, MOUSEEVENTF_MIDDLEUP),
+            _ => (MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP)
+        };
+
+    public static void Volume(string action)
+    {
+        var key = action.ToLowerInvariant() switch
+        {
+            "up" => "volumeup",
+            "down" => "volumedown",
+            "mute" => "volumemute",
+            _ => ""
+        };
+        if (key.Length > 0) PressKey(key);
+    }
+
     public static void TypeText(string text)
     {
         foreach (var ch in text)
@@ -97,6 +124,7 @@ internal static class NativeInput
             "f1" => 0x70, "f2" => 0x71, "f3" => 0x72, "f4" => 0x73,
             "f5" => 0x74, "f6" => 0x75, "f7" => 0x76, "f8" => 0x77,
             "f9" => 0x78, "f10" => 0x79, "f11" => 0x7A, "f12" => 0x7B,
+            "volumeup" => 0xAF, "volumedown" => 0xAE, "volumemute" => 0xAD,
             _ => (ushort)0
         };
         if (vk == 0) return;
