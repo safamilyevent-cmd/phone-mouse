@@ -96,6 +96,18 @@ app.Map("/ws", async (HttpContext context) =>
                 case "click":
                     NativeInput.Click(msg.TryGetProperty("button", out var b) ? b.GetString() : "left");
                     break;
+                case "doubleClick":
+                    NativeInput.DoubleClick(msg.TryGetProperty("button", out var db) ? db.GetString() : "left");
+                    break;
+                case "mouseDown":
+                    NativeInput.MouseDown(msg.TryGetProperty("button", out var down) ? down.GetString() : "left");
+                    break;
+                case "mouseUp":
+                    NativeInput.MouseUp(msg.TryGetProperty("button", out var up) ? up.GetString() : "left");
+                    break;
+                case "volume":
+                    NativeInput.Volume(msg.GetProperty("action").GetString() ?? "");
+                    break;
                 case "scroll":
                     NativeInput.Scroll((int)Clamp(msg.GetProperty("delta").GetDouble(), -1200, 1200));
                     break;
